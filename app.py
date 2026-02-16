@@ -3,6 +3,7 @@ from huggingface_hub import InferenceClient
 import os
 
 # --- Configuration ---
+# On Render, you will set this in the Dashboard under 'Environment Variables'
 HF_TOKEN = os.getenv("HF_TOKEN")
 if not HF_TOKEN:
     raise ValueError("Hugging Face token not found. Set environment variable HF_TOKEN.")
@@ -14,7 +15,7 @@ custom_css = """
 footer {visibility: hidden !important; display: none !important;}
 
 .gradio-container {
-    max-width: 500px !important; /* Smaller overall width for a compact feel */
+    max-width: 500px !important; 
     margin: 0 auto !important; 
     height: 98vh !important;
     display: flex !important;
@@ -26,11 +27,10 @@ footer {visibility: hidden !important; display: none !important;}
 #header-container {text-align: center; margin-bottom: 5px;}
 #header-container h1 {font-weight: 900; font-size: 1.5rem; color: #ffffff; margin: 0;}
 
-/* FIXED COMPACT IMAGE BOX */
 #image-display {
-    width: 350px !important; /* Forces the image to be smaller on screen */
+    width: 350px !important; 
     height: 350px !important;
-    margin: 0 auto !important; /* Centers the image */
+    margin: 0 auto !important; 
     aspect-ratio: 1 / 1 !important;
     background: #0f172a;
     border-radius: 15px;
@@ -60,10 +60,16 @@ footer {visibility: hidden !important; display: none !important;}
 def generator(prompt):
     if not prompt or len(prompt.strip()) < 5:
         raise gr.Error("Prompt too short.")
+    
+    # Booster for perfect hands and anatomy
+    enhanced_prompt = (
+        f"{prompt.strip()}, highly detailed hands, perfect anatomy, five fingers, "
+        "accurate joints, photorealistic, cinematic lighting, 8k resolution, sharp focus"
+    )
+    
     try:
-        # Generate 1024 for high quality, but CSS will shrink it for display
         image = client.text_to_image(
-            prompt=prompt,
+            prompt=enhanced_prompt,
             model="black-forest-labs/FLUX.1-schnell",
             num_inference_steps=8,
             guidance_scale=0.0,
@@ -79,7 +85,6 @@ with gr.Blocks(theme=gr.themes.Soft(primary_hue="indigo", neutral_hue="slate"), 
     with gr.Column(elem_id="header-container"):
         gr.Markdown("# ⚡ IMAGENERATOR")
 
-    # Image Area: Constrained to 350px
     image_display = gr.Image(
         label=None,
         elem_id="image-display",
@@ -89,7 +94,6 @@ with gr.Blocks(theme=gr.themes.Soft(primary_hue="indigo", neutral_hue="slate"), 
         container=False
     )
 
-    # Input Area: Inline and compact
     with gr.Row(elem_classes="input-row", equal_height=True):
         user_prompt = gr.Textbox(
             label=None,
@@ -101,21 +105,22 @@ with gr.Blocks(theme=gr.themes.Soft(primary_hue="indigo", neutral_hue="slate"), 
         )
         generate_btn = gr.Button("Create", variant="primary", elem_classes="generate-btn", scale=2)
 
-    # Minimal Status
     with gr.Row():
-        with gr.Column(scale=2):
-            gr.Markdown("Engine: **FLUX.1**", elem_classes="status-text")
-        with gr.Column(scale=1):
+        with gr.Column(scale=2, min_width=150):
+            gr.Markdown("Engine: **FLUX.1 Pro Mode**", elem_classes="status-text")
+        with gr.Column(scale=1, min_width=100):
             clear_btn = gr.Button("Reset", variant="link")
 
-    # Events
     generate_btn.click(fn=generator, inputs=user_prompt, outputs=image_display)
     user_prompt.submit(fn=generator, inputs=user_prompt, outputs=image_display)
     clear_btn.click(lambda: (None, ""), outputs=[image_display, user_prompt])
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 5000))
-    try:
-        demo.launch(server_name="0.0.0.0", server_port=port, show_api=False)
-    except OSError:
-        demo.launch(server_name="0.0.0.0", server_port=7860, show_api=False)
+    # Render uses port 10000 by default. This logic handles it automatically.
+    port = int(os.getenv("PORT", 10000))
+    print(f"🚀 Launching on port {port}...")
+    demo.launch(
+        server_name="0.0.0.0", 
+        server_port=port, 
+        show_api=False
+    )
