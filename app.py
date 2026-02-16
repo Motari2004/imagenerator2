@@ -67,8 +67,12 @@ def generator(prompt):
         raise gr.Error(f"API Error: {str(e)}")
 
 # --- Interface Build ---
-# Note: theme and css removed from here for Gradio 6 compatibility
-with gr.Blocks(title="Imagenerator Pro") as demo:
+# Put THEME and CSS back into Blocks - this is the most compatible way for local/prod mix
+with gr.Blocks(
+    theme=gr.themes.Soft(primary_hue="indigo", neutral_hue="slate"), 
+    css=custom_css, 
+    title="Imagenerator Pro"
+) as demo:
     
     with gr.Column(elem_id="header-container"):
         gr.Markdown("# ⚡ IMAGENERATOR")
@@ -105,7 +109,8 @@ with gr.Blocks(title="Imagenerator Pro") as demo:
 
 # --- Logic for Local vs Prod Ports ---
 if __name__ == "__main__":
-    IS_PROD = os.getenv("RENDER") or os.getenv("PORT")
+    # If RENDER environment variable exists, use 10000, else use 5000
+    IS_PROD = os.getenv("RENDER") is not None
     
     port = int(os.getenv("PORT", 10000 if IS_PROD else 5000))
     server_name = "0.0.0.0" if IS_PROD else "127.0.0.1"
@@ -115,10 +120,8 @@ if __name__ == "__main__":
 
     demo.queue()
     
-    # In Gradio 6, we pass theme and css here
+    # Minimalist launch for maximum compatibility
     demo.launch(
         server_name=server_name,
-        server_port=port,
-        theme=gr.themes.Soft(primary_hue="indigo", neutral_hue="slate"),
-        css=custom_css
+        server_port=port
     )
