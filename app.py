@@ -3,7 +3,6 @@ from huggingface_hub import InferenceClient
 import os
 
 # --- Configuration & Token ---
-# Ensure HF_TOKEN is in your environment variables or .env file
 HF_TOKEN = os.getenv("HF_TOKEN")
 if not HF_TOKEN:
     raise ValueError("Hugging Face token not found. Set environment variable HF_TOKEN.")
@@ -68,7 +67,8 @@ def generator(prompt):
         raise gr.Error(f"API Error: {str(e)}")
 
 # --- Interface Build ---
-with gr.Blocks(theme=gr.themes.Soft(primary_hue="indigo", neutral_hue="slate"), css=custom_css, title="Imagenerator Pro") as demo:
+# Note: theme and css removed from here for Gradio 6 compatibility
+with gr.Blocks(title="Imagenerator Pro") as demo:
     
     with gr.Column(elem_id="header-container"):
         gr.Markdown("# ⚡ IMAGENERATOR")
@@ -99,16 +99,12 @@ with gr.Blocks(theme=gr.themes.Soft(primary_hue="indigo", neutral_hue="slate"), 
         with gr.Column(scale=1):
             clear_btn = gr.Button("Reset", variant="link")
 
-    # Event Listeners with Multi-User Concurrency
-    # concurrency_limit=5 allows 5 users to generate at the exact same time
     generate_btn.click(fn=generator, inputs=user_prompt, outputs=image_display, concurrency_limit=5)
     user_prompt.submit(fn=generator, inputs=user_prompt, outputs=image_display, concurrency_limit=5)
     clear_btn.click(lambda: (None, ""), outputs=[image_display, user_prompt])
 
 # --- Logic for Local vs Prod Ports ---
 if __name__ == "__main__":
-    # Check if we are on Render (which sets a PORT env var) or running locally
-    # We default to 10000 for Render, but if you run locally it will try 5000
     IS_PROD = os.getenv("RENDER") or os.getenv("PORT")
     
     port = int(os.getenv("PORT", 10000 if IS_PROD else 5000))
@@ -117,11 +113,12 @@ if __name__ == "__main__":
     print(f"🛠️ Environment: {'PRODUCTION' if IS_PROD else 'LOCAL'}")
     print(f"🚀 Launching on {server_name}:{port}")
 
-    # Start the queue for multiple users
     demo.queue()
     
+    # In Gradio 6, we pass theme and css here
     demo.launch(
         server_name=server_name,
         server_port=port,
-        show_api=False
+        theme=gr.themes.Soft(primary_hue="indigo", neutral_hue="slate"),
+        css=custom_css
     )
