@@ -7,7 +7,7 @@ HF_TOKEN = os.getenv("HF_TOKEN")
 if not HF_TOKEN:
     raise ValueError("Hugging Face token not found. Set environment variable HF_TOKEN.")
 
-client = InferenceClient(token=HF_TOKEN, token=HF_TOKEN, timeout=120)
+client = InferenceClient(token=HF_TOKEN, timeout=120)
 
 # Professional CSS
 custom_css = """
@@ -45,6 +45,7 @@ footer {visibility: hidden !important; display: none !important;}
     border: none !important;
     color: white !important;
     font-weight: 700 !important;
+    min-width: 90px !important;
 }
 .status-text { font-size: 0.75rem; opacity: 0.7; }
 """
@@ -53,12 +54,10 @@ def generator(prompt):
     if not prompt or len(prompt.strip()) < 5:
         raise gr.Error("Prompt too short.")
     
-    # FORCED ANATOMY BOOSTER
-    # We use 'ultra-sharp' and 'anatomically correct' to force the model's focus
+    # Anatomy & Detail Booster
     enhanced_prompt = (
-        f"{prompt.strip()}, anatomical excellence, perfectly rendered hands with five fingers, "
-        "accurate finger joints, no deformities, high-resolution skin texture, "
-        "photorealistic masterpiece, sharp focus, 8k."
+        f"{prompt.strip()}, anatomical excellence, perfectly rendered hands, five fingers, "
+        "accurate joints, photorealistic, cinematic lighting, 8k resolution, sharp focus"
     )
     
     try:
@@ -75,18 +74,33 @@ def generator(prompt):
         raise gr.Error(f"System Error: {str(e)}")
 
 with gr.Blocks(theme=gr.themes.Soft(primary_hue="indigo", neutral_hue="slate"), css=custom_css, title="Imagenerator Pro") as demo:
+    
     with gr.Column(elem_id="header-container"):
         gr.Markdown("# ⚡ IMAGENERATOR")
 
-    image_display = gr.Image(label=None, elem_id="image-display", type="pil", interactive=False, show_label=False, container=False)
+    image_display = gr.Image(
+        label=None,
+        elem_id="image-display",
+        type="pil",
+        interactive=False,
+        show_label=False,
+        container=False
+    )
 
     with gr.Row(elem_classes="input-row", equal_height=True):
-        user_prompt = gr.Textbox(label=None, placeholder="Describe vision...", lines=1, container=False, scale=7, autofocus=True)
+        user_prompt = gr.Textbox(
+            label=None,
+            placeholder="Describe vision...",
+            lines=1,
+            container=False,
+            scale=7,
+            autofocus=True
+        )
         generate_btn = gr.Button("Create", variant="primary", elem_classes="generate-btn", scale=2)
 
     with gr.Row():
         with gr.Column(scale=2, min_width=150):
-            gr.Markdown("Engine: **FLUX.1 Pro Anatomy**", elem_classes="status-text")
+            gr.Markdown("Engine: **FLUX.1 Pro Mode**", elem_classes="status-text")
         with gr.Column(scale=1, min_width=100):
             clear_btn = gr.Button("Reset", variant="link")
 
@@ -95,17 +109,11 @@ with gr.Blocks(theme=gr.themes.Soft(primary_hue="indigo", neutral_hue="slate"), 
     clear_btn.click(lambda: (None, ""), outputs=[image_display, user_prompt])
 
 if __name__ == "__main__":
-    # FORCED PORT LOGIC
-    # Check if we are on Render by looking for the 'RENDER' environment variable
+    # FORCED PORT LOGIC: 10000 for Render, 5000 for Local
     if os.getenv("RENDER"):
-        target_port = 10000
-        print(f"FORCING PRODUCTION PORT: {target_port}")
+        port = 10000
     else:
-        target_port = 5000
-        print(f"FORCING LOCAL PORT: {target_port}")
-
-    demo.launch(
-        server_name="0.0.0.0", 
-        server_port=target_port, 
-        show_api=False
-    )
+        port = 5000
+        
+    print(f"--- Starting Server on Port: {port} ---")
+    demo.launch(server_name="0.0.0.0", server_port=port, show_api=False)
