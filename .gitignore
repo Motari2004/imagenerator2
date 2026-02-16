@@ -1,0 +1,7 @@
+# WhatsApp Session Data
+auth_info/
+locals/
+sessions/
+settings.json
+
+.env
