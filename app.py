@@ -3,17 +3,15 @@ from huggingface_hub import InferenceClient
 import os
 
 # --- Configuration ---
-# On Render, you will set this in the Dashboard under 'Environment Variables'
 HF_TOKEN = os.getenv("HF_TOKEN")
 if not HF_TOKEN:
     raise ValueError("Hugging Face token not found. Set environment variable HF_TOKEN.")
 
-client = InferenceClient(token=HF_TOKEN, timeout=120)
+client = InferenceClient(token=HF_TOKEN, token=HF_TOKEN, timeout=120)
 
-# Professional CSS: Compact UI with fixed-size sharp image
+# Professional CSS
 custom_css = """
 footer {visibility: hidden !important; display: none !important;}
-
 .gradio-container {
     max-width: 500px !important; 
     margin: 0 auto !important; 
@@ -23,10 +21,8 @@ footer {visibility: hidden !important; display: none !important;}
     justify-content: center !important;
     gap: 5px !important;
 }
-
 #header-container {text-align: center; margin-bottom: 5px;}
 #header-container h1 {font-weight: 900; font-size: 1.5rem; color: #ffffff; margin: 0;}
-
 #image-display {
     width: 350px !important; 
     height: 350px !important;
@@ -38,22 +34,18 @@ footer {visibility: hidden !important; display: none !important;}
     object-fit: cover !important;
     box-shadow: 0 8px 25px rgba(0,0,0,0.5);
 }
-
 .input-row {
     background: rgba(255, 255, 255, 0.05);
     padding: 8px;
     border-radius: 12px;
     border: 1px solid rgba(255,255,255,0.1);
 }
-
 .generate-btn {
     background: linear-gradient(90deg, #4f46e5, #7c3aed) !important;
     border: none !important;
     color: white !important;
     font-weight: 700 !important;
-    min-width: 90px !important;
 }
-
 .status-text { font-size: 0.75rem; opacity: 0.7; }
 """
 
@@ -61,10 +53,12 @@ def generator(prompt):
     if not prompt or len(prompt.strip()) < 5:
         raise gr.Error("Prompt too short.")
     
-    # Booster for perfect hands and anatomy
+    # FORCED ANATOMY BOOSTER
+    # We use 'ultra-sharp' and 'anatomically correct' to force the model's focus
     enhanced_prompt = (
-        f"{prompt.strip()}, highly detailed hands, perfect anatomy, five fingers, "
-        "accurate joints, photorealistic, cinematic lighting, 8k resolution, sharp focus"
+        f"{prompt.strip()}, anatomical excellence, perfectly rendered hands with five fingers, "
+        "accurate finger joints, no deformities, high-resolution skin texture, "
+        "photorealistic masterpiece, sharp focus, 8k."
     )
     
     try:
@@ -81,33 +75,18 @@ def generator(prompt):
         raise gr.Error(f"System Error: {str(e)}")
 
 with gr.Blocks(theme=gr.themes.Soft(primary_hue="indigo", neutral_hue="slate"), css=custom_css, title="Imagenerator Pro") as demo:
-    
     with gr.Column(elem_id="header-container"):
         gr.Markdown("# ⚡ IMAGENERATOR")
 
-    image_display = gr.Image(
-        label=None,
-        elem_id="image-display",
-        type="pil",
-        interactive=False,
-        show_label=False,
-        container=False
-    )
+    image_display = gr.Image(label=None, elem_id="image-display", type="pil", interactive=False, show_label=False, container=False)
 
     with gr.Row(elem_classes="input-row", equal_height=True):
-        user_prompt = gr.Textbox(
-            label=None,
-            placeholder="Describe vision...",
-            lines=1,
-            container=False,
-            scale=7,
-            autofocus=True
-        )
+        user_prompt = gr.Textbox(label=None, placeholder="Describe vision...", lines=1, container=False, scale=7, autofocus=True)
         generate_btn = gr.Button("Create", variant="primary", elem_classes="generate-btn", scale=2)
 
     with gr.Row():
         with gr.Column(scale=2, min_width=150):
-            gr.Markdown("Engine: **FLUX.1 Pro Mode**", elem_classes="status-text")
+            gr.Markdown("Engine: **FLUX.1 Pro Anatomy**", elem_classes="status-text")
         with gr.Column(scale=1, min_width=100):
             clear_btn = gr.Button("Reset", variant="link")
 
@@ -116,11 +95,17 @@ with gr.Blocks(theme=gr.themes.Soft(primary_hue="indigo", neutral_hue="slate"), 
     clear_btn.click(lambda: (None, ""), outputs=[image_display, user_prompt])
 
 if __name__ == "__main__":
-    # Render uses port 10000 by default. This logic handles it automatically.
-    port = int(os.getenv("PORT", 10000))
-    print(f"🚀 Launching on port {port}...")
+    # FORCED PORT LOGIC
+    # Check if we are on Render by looking for the 'RENDER' environment variable
+    if os.getenv("RENDER"):
+        target_port = 10000
+        print(f"FORCING PRODUCTION PORT: {target_port}")
+    else:
+        target_port = 5000
+        print(f"FORCING LOCAL PORT: {target_port}")
+
     demo.launch(
         server_name="0.0.0.0", 
-        server_port=port, 
+        server_port=target_port, 
         show_api=False
     )
